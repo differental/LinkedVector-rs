@@ -16,7 +16,7 @@ struct LinkedVector<T> {
 }
 
 impl<T> LinkedVector<T> {
-    fn new() -> LinkedVector<T> {
+    pub fn new() -> LinkedVector<T> {
         LinkedVector {
             data: Vec::new(),
             head: None,
@@ -53,32 +53,27 @@ impl<T> LinkedVector<T> {
     }
 
     pub fn head(&self) -> Option<&LinkedNode<T>> {
-        match self.head {
-            Some(idx) => Some(&self.data[idx]),
-            None => None,
-        }
+        self.head.map(|idx| &self.data[idx])
+    }
+
+    pub fn head_mut(&mut self) -> Option<&mut LinkedNode<T>> {
+        self.head.map(|idx| &mut self.data[idx])
     }
 
     pub fn tail(&self) -> Option<&LinkedNode<T>> {
-        match self.tail {
-            Some(idx) => Some(&self.data[idx]),
-            None => None,
-        }
+        self.tail.map(|idx| &self.data[idx])
     }
 
     pub fn tail_mut(&mut self) -> Option<&mut LinkedNode<T>> {
-        match self.tail {
-            Some(idx) => Some(&mut self.data[idx]),
-            None => None,
-        }
+        self.tail.map(|idx| &mut self.data[idx])
     }
 
     pub fn push_back(&mut self, item: T) {
-        let new_node = LinkedNode {
+        let nidx = self.alloc(LinkedNode {
             item: Some(item),
             next: None,
-        };
-        let nidx = self.alloc(new_node);
+        });
+
         match self.tail_mut() {
             Some(tail_node) => {
                 tail_node.next = Some(nidx);
@@ -93,14 +88,11 @@ impl<T> LinkedVector<T> {
     }
 
     pub fn pop_front(&mut self) -> Option<T> {
-        match self.head {
-            None => None,
-            Some(oidx) => {
-                self.head = self.data[oidx].next;
-                self.freelist.push(oidx);
-                return Some(self.data[oidx].item.take().unwrap());
-            }
-        }
+        self.head.map(|oidx| {
+            self.head = self.data[oidx].next;
+            self.freelist.push(oidx);
+            self.data[oidx].item.take().unwrap()
+        })
     }
     // pop_back not supported - for that, use a doubly implementation
     //   (or just use delete if you know the length)
@@ -112,17 +104,8 @@ impl<T> LinkedVector<T> {
         }
 
         self.freelist.push(self[idx - 1].next.unwrap());
+        self[idx - 1].next = self[idx].next;
 
-        match self[idx].next {
-            Some(next_idx) => {
-                // idx + 1 exists, needs rerouting
-                self[idx - 1].next = Some(next_idx);
-            }
-            None => {
-                // idx + 1 doesn't exist, simply change second-to-last to none
-                self[idx - 1].next = None;
-            }
-        }
         self.data[idx].item.take().unwrap()
     }
 }
