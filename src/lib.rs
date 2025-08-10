@@ -1,21 +1,28 @@
-use std::{fmt::Debug, ops::{Index, IndexMut}};
-
+use std::{
+    fmt::Debug,
+    ops::{Index, IndexMut},
+};
 
 struct LinkedNode<T> {
     item: Option<T>, // Used to facilitate pops
-    next: Option<usize>
+    next: Option<usize>,
 }
 
 struct LinkedVector<T> {
     data: Vec<LinkedNode<T>>,
     head: Option<usize>,
     tail: Option<usize>,
-    freelist: Vec<usize>
+    freelist: Vec<usize>,
 }
 
 impl<T> LinkedVector<T> {
     fn new() -> LinkedVector<T> {
-        LinkedVector { data: Vec::new(), head: None, tail: None, freelist: Vec::new() }
+        LinkedVector {
+            data: Vec::new(),
+            head: None,
+            tail: None,
+            freelist: Vec::new(),
+        }
     }
 
     fn alloc(&mut self, new_node: LinkedNode<T>) -> usize {
@@ -23,7 +30,7 @@ impl<T> LinkedVector<T> {
             Some(idx) => {
                 self.data[idx] = new_node;
                 return idx;
-            },
+            }
             None => {
                 self.data.push(new_node);
                 return self.data.len() - 1;
@@ -32,11 +39,15 @@ impl<T> LinkedVector<T> {
     }
 
     pub fn push_front(&mut self, item: T) {
-        let new_node = LinkedNode { item: Some(item), next: self.head };
+        let new_node = LinkedNode {
+            item: Some(item),
+            next: self.head,
+        };
         let nidx = self.alloc(new_node);
 
         self.head = Some(nidx);
-        if self.tail == None { // first element
+        if self.tail == None {
+            // first element
             self.tail = Some(nidx);
         }
     }
@@ -44,32 +55,35 @@ impl<T> LinkedVector<T> {
     pub fn head(&self) -> Option<&LinkedNode<T>> {
         match self.head {
             Some(idx) => Some(&self.data[idx]),
-            None => None
+            None => None,
         }
     }
 
     pub fn tail(&self) -> Option<&LinkedNode<T>> {
         match self.tail {
             Some(idx) => Some(&self.data[idx]),
-            None => None
+            None => None,
         }
     }
-    
+
     pub fn tail_mut(&mut self) -> Option<&mut LinkedNode<T>> {
         match self.tail {
             Some(idx) => Some(&mut self.data[idx]),
-            None => None
+            None => None,
         }
     }
 
     pub fn push_back(&mut self, item: T) {
-        let new_node = LinkedNode { item: Some(item), next: None };
+        let new_node = LinkedNode {
+            item: Some(item),
+            next: None,
+        };
         let nidx = self.alloc(new_node);
         match self.tail_mut() {
             Some(tail_node) => {
                 tail_node.next = Some(nidx);
                 self.tail = Some(nidx);
-            },
+            }
             None => {
                 // New item is both head and tail
                 self.head = Some(nidx);
@@ -91,23 +105,22 @@ impl<T> LinkedVector<T> {
     // pop_back not supported - for that, use a doubly implementation
     //   (or just use delete if you know the length)
 
-
     pub fn delete(&mut self, idx: usize) -> T {
         // Will panic if idx out of bounds
         if idx == 0 {
             return self.pop_front().unwrap();
         }
 
-        self.freelist.push(self[idx-1].next.unwrap());
+        self.freelist.push(self[idx - 1].next.unwrap());
 
         match self[idx].next {
             Some(next_idx) => {
                 // idx + 1 exists, needs rerouting
-                self[idx-1].next = Some(next_idx);
-            },
+                self[idx - 1].next = Some(next_idx);
+            }
             None => {
                 // idx + 1 doesn't exist, simply change second-to-last to none
-                self[idx-1].next = None;
+                self[idx - 1].next = None;
             }
         }
         self.data[idx].item.take().unwrap()
@@ -136,7 +149,6 @@ impl<T> IndexMut<usize> for LinkedVector<T> {
     }
 }
 
-
 impl<T: Debug> Debug for LinkedNode<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.item.as_ref().unwrap())
@@ -150,13 +162,12 @@ impl<T: Debug> Debug for LinkedVector<T> {
             idx = self.data[idx_num].next;
             match write!(f, "{:?} ", self.data[idx_num]) {
                 Ok(_) => (),
-                Err(err) => return Err(err)
+                Err(err) => return Err(err),
             };
         }
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -175,7 +186,7 @@ mod tests {
 
         my_vec.push_front(300u64);
         assert_eq!(format!("{my_vec:?}").trim(), "300 100 200");
-        
+
         let a = my_vec.pop_front();
         assert_eq!(format!("{my_vec:?}").trim(), "100 200");
         assert_eq!(a, Some(300));
@@ -193,10 +204,10 @@ mod tests {
         my_vec.push_back(100u64);
         my_vec.push_back(200u64);
         my_vec.push_front(300u64);
-        
+
         my_vec.pop_front();
         my_vec.delete(1);
-        
+
         my_vec.delete(1); // Should panic here
     }
 }
