@@ -1,6 +1,6 @@
 # LinkedVector-rs
 
-An experimental data structure that might be extremely dumb
+An experimental data structure that aims to increase cache hits when using linked lists.
 
 ## Background
 
