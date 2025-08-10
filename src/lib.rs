@@ -4,7 +4,7 @@ use std::{
 };
 
 pub struct LinkedNode<T> {
-    item: Option<T>, // Option<> is used to facilitate pops (.take())
+    pub item: Option<T>, // Option<> is used to facilitate pops (.take())
     next: Option<usize>,
 }
 
@@ -44,7 +44,6 @@ impl<T> LinkedVector<T> {
         self.data.capacity()
     }
 
-    #[cfg(debug_assertions)]
     pub fn mem_used(&self) -> usize {
         // Gives an estimate of the total *heap* memory acitvely used, in bytes
         // Calculation formula:
@@ -54,7 +53,6 @@ impl<T> LinkedVector<T> {
             + size_of::<usize>() * self.freelist.len()
     }
 
-    #[cfg(debug_assertions)]
     pub fn true_mem_used(&self) -> usize {
         // Gives an estimate of the total *heap* memory allocated, in bytes
         // Calculation formula:
@@ -145,6 +143,16 @@ impl<T> LinkedVector<T> {
     #[cfg(any())]
     pub fn pop_back(&mut self) -> () {}
 
+    // Returns the physical index in data for an index.
+    // Panics if out-of-bounds.
+    fn physical_index_of(&self, index: usize) -> usize {
+        let mut current = self.head.expect("Index out of bounds");
+        for _ in 0..index {
+            current = self.data[current].next.expect("Index out of bounds");
+        }
+        current
+    }
+
     pub fn delete(&mut self, idx: usize) -> T {
         // Indexing will panic if idx out of bounds.
         // This debug assert is intended to panic earlier
@@ -155,8 +163,11 @@ impl<T> LinkedVector<T> {
             return self.pop_front().unwrap();
         }
 
-        self.freelist.push(self[idx - 1].next.unwrap());
-        self[idx - 1].next = self[idx].next;
+        let prev_phys = self.physical_index_of(idx - 1);
+        let remove_phys = self.data[prev_phys].next.expect("Index out of bounds");
+
+        self.data[prev_phys].next = self.data[remove_phys].next;
+        self.freelist.push(remove_phys);
 
         self.length -= 1;
 
