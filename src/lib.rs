@@ -3,16 +3,17 @@ use std::{
     ops::{Index, IndexMut},
 };
 
-struct LinkedNode<T> {
-    item: Option<T>, // Used to facilitate pops
+pub struct LinkedNode<T> {
+    item: Option<T>, // Option<> is used to facilitate pops (.take())
     next: Option<usize>,
 }
 
-struct LinkedVector<T> {
+pub struct LinkedVector<T> {
     data: Vec<LinkedNode<T>>,
     head: Option<usize>,
     tail: Option<usize>,
     freelist: Vec<usize>,
+    length: usize,
 }
 
 impl<T> LinkedVector<T> {
@@ -22,7 +23,45 @@ impl<T> LinkedVector<T> {
             head: None,
             tail: None,
             freelist: Vec::new(),
+            length: 0,
         }
+    }
+
+    pub fn len(&self) -> usize {
+        // Number of linked nodes
+        debug_assert_eq!(self.data.len(), self.length + self.freelist.len());
+        self.length
+    }
+
+    pub fn true_len(&self) -> usize {
+        // Length of the underlying vector (maximum length used during lifetime)
+        debug_assert_eq!(self.data.len(), self.length + self.freelist.len());
+        self.data.len()
+    }
+
+    pub fn capacity(&self) -> usize {
+        // Capacity of the underlying vector
+        self.data.capacity()
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn mem_used(&self) -> usize {
+        // Gives an estimate of the total *heap* memory acitvely used, in bytes
+        // Calculation formula:
+        //    data: (size_of(T) + usize) * data.len()
+        //    freelist: usize * freelist.len()
+        (size_of::<T>() + size_of::<usize>()) * self.data.len()
+            + size_of::<usize>() * self.freelist.len()
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn true_mem_used(&self) -> usize {
+        // Gives an estimate of the total *heap* memory allocated, in bytes
+        // Calculation formula:
+        //    data: (size_of(T) + usize) * data.capacity()
+        //    freelist: usize * freelist.capacity()
+        (size_of::<T>() + size_of::<usize>()) * self.data.capacity()
+            + size_of::<usize>() * self.freelist.capacity()
     }
 
     fn alloc(&mut self, new_node: LinkedNode<T>) -> usize {
@@ -50,6 +89,8 @@ impl<T> LinkedVector<T> {
             // first element
             self.tail = Some(nidx);
         }
+
+        self.length += 1;
     }
 
     pub fn head(&self) -> Option<&LinkedNode<T>> {
@@ -85,26 +126,39 @@ impl<T> LinkedVector<T> {
                 self.tail = Some(nidx);
             }
         }
+
+        self.length += 1;
     }
 
     pub fn pop_front(&mut self) -> Option<T> {
+        self.length -= 1;
         self.head.map(|oidx| {
             self.head = self.data[oidx].next;
             self.freelist.push(oidx);
             self.data[oidx].item.take().unwrap()
         })
     }
-    // pop_back not supported - for that, use a doubly implementation
-    //   (or just use delete if you know the length)
+
+    // pop_back not supported since it's not an efficient operation.
+    //   To achieve that, ideally implement with a doubly linked list,
+    //   or just use delete() with len().
+    #[cfg(any())]
+    pub fn pop_back(&mut self) -> () {}
 
     pub fn delete(&mut self, idx: usize) -> T {
-        // Will panic if idx out of bounds
+        // Indexing will panic if idx out of bounds.
+        // This debug assert is intended to panic earlier
+        //   during debugs to improve clarity.
+        debug_assert!(idx < self.length);
+
         if idx == 0 {
             return self.pop_front().unwrap();
         }
 
         self.freelist.push(self[idx - 1].next.unwrap());
         self[idx - 1].next = self[idx].next;
+
+        self.length -= 1;
 
         self.data[idx].item.take().unwrap()
     }
@@ -116,9 +170,9 @@ impl<T> Index<usize> for LinkedVector<T> {
     fn index(&self, index: usize) -> &Self::Output {
         let mut current = self.head;
         for _ in 0..index {
-            current = self.data[current.expect("Index not within bounds")].next;
+            current = self.data[current.expect("Index out of bounds")].next;
         }
-        &self.data[current.expect("Index not within bounds")]
+        &self.data[current.expect("Index out of bounds")]
     }
 }
 
@@ -126,9 +180,9 @@ impl<T> IndexMut<usize> for LinkedVector<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         let mut current = self.head;
         for _ in 0..index {
-            current = self.data[current.expect("Index not within bounds")].next;
+            current = self.data[current.expect("Index out of bounds")].next;
         }
-        &mut self.data[current.expect("Index not within bounds")]
+        &mut self.data[current.expect("Index out of bounds")]
     }
 }
 
@@ -161,6 +215,9 @@ mod tests {
         let mut my_vec = LinkedVector::<u64>::new();
         assert_eq!(format!("{my_vec:?}").trim(), "");
 
+        assert_eq!(my_vec.len(), 0);
+        assert_eq!(my_vec.true_len(), 0);
+
         my_vec.push_back(100u64);
         assert_eq!(format!("{my_vec:?}").trim(), "100");
 
@@ -170,13 +227,22 @@ mod tests {
         my_vec.push_front(300u64);
         assert_eq!(format!("{my_vec:?}").trim(), "300 100 200");
 
+        assert_eq!(my_vec.len(), 3);
+        assert_eq!(my_vec.true_len(), 3);
+
         let a = my_vec.pop_front();
         assert_eq!(format!("{my_vec:?}").trim(), "100 200");
         assert_eq!(a, Some(300));
 
+        assert_eq!(my_vec.len(), 2);
+        assert_eq!(my_vec.true_len(), 3);
+
         let b = my_vec.delete(1);
         assert_eq!(format!("{my_vec:?}").trim(), "100");
         assert_eq!(b, 200);
+
+        assert_eq!(my_vec.len(), 1);
+        assert_eq!(my_vec.true_len(), 3);
     }
 
     #[test]
