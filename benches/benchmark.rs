@@ -1,10 +1,10 @@
-use std::{collections::LinkedList,hint::black_box};
-use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, SamplingMode, criterion_group, criterion_main};
+use std::{collections::LinkedList, hint::black_box};
 
 use linkedvector::LinkedVector;
 
-const N_STRUCTS: [usize; 7] = [10, 20, 50, 100, 500, 1_000, 2_000];
-const SIZE_STRUCT: usize = 50_000;
+const N_STRUCTS: [usize; 8] = [10, 30, 100, 300, 1_000, 3_000, 10_000, 30_000];
+const SIZE_STRUCT: usize = 10_000;
 
 #[derive(Clone, Debug)]
 struct MyStruct {
@@ -81,6 +81,7 @@ fn bench_delete_linkedvector<T>(mut lv: LinkedVector<T>, idx: usize) -> LinkedVe
 
 fn bench_constructions(c: &mut Criterion) {
     let mut group = c.benchmark_group("Construction");
+    group.sampling_mode(SamplingMode::Flat);
 
     let element = MyStruct::new(42);
 
@@ -100,6 +101,7 @@ fn bench_constructions(c: &mut Criterion) {
 
 fn bench_random_accesses(c: &mut Criterion) {
     let mut group = c.benchmark_group("Random Access");
+    group.sampling_mode(SamplingMode::Flat);
 
     let element = MyStruct::new(42);
 
@@ -123,6 +125,7 @@ fn bench_random_accesses(c: &mut Criterion) {
 
 fn bench_deletions(c: &mut Criterion) {
     let mut group = c.benchmark_group("Deletion");
+    group.sampling_mode(SamplingMode::Flat);
 
     let element = MyStruct::new(42);
 
