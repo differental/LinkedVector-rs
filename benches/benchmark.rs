@@ -1,16 +1,10 @@
-use std::collections::LinkedList;
-/// Benchmark Binary Target
-use std::hint::black_box;
-//use std::mem::size_of;
-//use std::time::{Duration, Instant};
-
+use std::{collections::LinkedList,hint::black_box};
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+
 use linkedvector::LinkedVector;
 
-//const N_STRUCT: usize = 20; // number of MyStruct elements
 const N_STRUCTS: [usize; 7] = [10, 20, 50, 100, 500, 1_000, 2_000];
-const SIZE_STRUCT: usize = 50_000; // size of MyStruct is roughly 8*(24 + SIZE_STRUCT) bytes
-//const N_PRIMITIVE: usize = 100_000; // number of u64 elements
+const SIZE_STRUCT: usize = 50_000;
 
 #[derive(Clone, Debug)]
 struct MyStruct {
