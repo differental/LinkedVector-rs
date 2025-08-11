@@ -3,11 +3,13 @@ use std::{
     ops::{Index, IndexMut},
 };
 
+#[derive(Clone)]
 pub struct LinkedNode<T> {
     pub item: Option<T>, // Option<> is used to facilitate pops (.take())
     next: Option<usize>,
 }
 
+#[derive(Clone)]
 pub struct LinkedVector<T> {
     data: Vec<LinkedNode<T>>,
     head: Option<usize>,
@@ -23,6 +25,16 @@ impl<T> LinkedVector<T> {
             head: None,
             tail: None,
             freelist: Vec::new(),
+            length: 0,
+        }
+    }
+
+    pub fn with_capacity(n: usize) -> LinkedVector<T> {
+        LinkedVector {
+            data: Vec::with_capacity(n),
+            head: None,
+            tail: None,
+            freelist: Vec::with_capacity(n),
             length: 0,
         }
     }
@@ -66,11 +78,11 @@ impl<T> LinkedVector<T> {
         match self.freelist.pop() {
             Some(idx) => {
                 self.data[idx] = new_node;
-                return idx;
+                idx
             }
             None => {
                 self.data.push(new_node);
-                return self.data.len() - 1;
+                self.data.len() - 1
             }
         }
     }
@@ -83,7 +95,7 @@ impl<T> LinkedVector<T> {
         let nidx = self.alloc(new_node);
 
         self.head = Some(nidx);
-        if self.tail == None {
+        if self.tail.is_none() {
             // first element
             self.tail = Some(nidx);
         }
@@ -171,7 +183,7 @@ impl<T> LinkedVector<T> {
 
         self.length -= 1;
 
-        self.data[idx].item.take().unwrap()
+        self.data[remove_phys].item.take().unwrap()
     }
 }
 

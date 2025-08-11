@@ -12,12 +12,11 @@ bench = false
 doc = false
 crate-type = ["lib"]
 
-[[bin]]
-name = "bench"
-path = "src/bench.rs"
-test = false
-doctest = false
-bench = false
-doc = false
+[[bench]]
+name = "benchmark"
+harness = false
 
 [dependencies]
+
+[dev-dependencies]
+criterion = { version = "0.7", features = ["html_reports"] }
