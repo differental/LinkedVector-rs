@@ -2,6 +2,8 @@
 
 An experimental data structure that aims to increase cache hits when using linked lists.
 
+Benchmark against Vec and LinkedList: https://differental.github.io/LinkedVector-rs/report/ 
+
 ## Background
 
 There are two common containers for "dynamic chunks of data of the same type":
@@ -39,7 +41,5 @@ By varying the parameters (sizes of MyStruct and numbers of MyStruct and u64 in 
 
 In summary, for structs larger than 10KB up to over 10MB, for tasks that require efficiencies in both random access and deletion, `LinkedVector` *can* be a better choice than "vanilla" vectors or linked lists.
 
-## Notes
-
-It is worth noting that the results vary quite significantly between different runs, so it might be a good idea to run multiple tests on a machine with sufficient memory. (Results will be updated here when completed)
+For results, see: https://differental.github.io/LinkedVector-rs/report/
 
