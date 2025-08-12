@@ -1,9 +1,14 @@
-use criterion::{BenchmarkId, Criterion, SamplingMode, criterion_group, criterion_main};
+use criterion::{
+    AxisScale, BenchmarkId, Criterion, PlotConfiguration, SamplingMode, criterion_group,
+    criterion_main,
+};
 use std::{collections::LinkedList, hint::black_box};
 
 use linkedvector::LinkedVector;
 
-const N_STRUCTS: [usize; 8] = [10, 30, 100, 300, 1_000, 3_000, 10_000, 30_000];
+const N_STRUCTS: [usize; 12] = [
+    16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768,
+];
 const SIZE_STRUCT: usize = 10_000;
 
 #[derive(Clone, Debug)]
@@ -80,8 +85,11 @@ fn bench_delete_linkedvector<T>(mut lv: LinkedVector<T>, idx: usize) -> LinkedVe
 }
 
 fn bench_constructions(c: &mut Criterion) {
+    let plot_config = PlotConfiguration::default().summary_scale(AxisScale::Logarithmic);
+
     let mut group = c.benchmark_group("Construction");
     group.sampling_mode(SamplingMode::Flat);
+    group.plot_config(plot_config);
 
     let element = MyStruct::new(42);
 
@@ -89,9 +97,11 @@ fn bench_constructions(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("Vec", n), n, |b, n| {
             b.iter(|| black_box(bench_construction_vec(*n, element.clone())))
         });
+
         group.bench_with_input(BenchmarkId::new("LinkedList", n), n, |b, n| {
             b.iter(|| black_box(bench_construction_linkedlist(*n, element.clone())))
         });
+
         group.bench_with_input(BenchmarkId::new("LinkedVector", n), n, |b, n| {
             b.iter(|| black_box(bench_construction_linkedvector(*n, element.clone())))
         });
@@ -100,8 +110,11 @@ fn bench_constructions(c: &mut Criterion) {
 }
 
 fn bench_random_accesses(c: &mut Criterion) {
+    let plot_config = PlotConfiguration::default().summary_scale(AxisScale::Logarithmic);
+
     let mut group = c.benchmark_group("Random Access");
     group.sampling_mode(SamplingMode::Flat);
+    group.plot_config(plot_config);
 
     let element = MyStruct::new(42);
 
@@ -113,9 +126,11 @@ fn bench_random_accesses(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("Vec", n), n, |b, _| {
             b.iter(|| black_box(bench_random_access_vec(&vec_item)))
         });
+
         group.bench_with_input(BenchmarkId::new("LinkedList", n), n, |b, _| {
             b.iter(|| black_box(bench_random_access_linkedlist(&linkedlist_item)))
         });
+
         group.bench_with_input(BenchmarkId::new("LinkedVector", n), n, |b, _| {
             b.iter(|| black_box(bench_random_access_linkedvector(&linkedvector_item)))
         });
@@ -124,8 +139,11 @@ fn bench_random_accesses(c: &mut Criterion) {
 }
 
 fn bench_deletions(c: &mut Criterion) {
+    let plot_config = PlotConfiguration::default().summary_scale(AxisScale::Logarithmic);
+
     let mut group = c.benchmark_group("Deletion");
     group.sampling_mode(SamplingMode::Flat);
+    group.plot_config(plot_config);
 
     let element = MyStruct::new(42);
 
@@ -137,9 +155,11 @@ fn bench_deletions(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("Vec", n), n, |b, n| {
             b.iter(|| black_box(bench_delete_vec(vec_item.clone(), n / 2)))
         });
+
         group.bench_with_input(BenchmarkId::new("LinkedList", n), n, |b, n| {
             b.iter(|| black_box(bench_delete_linkedlist(linkedlist_item.clone(), n / 2)))
         });
+
         group.bench_with_input(BenchmarkId::new("LinkedVector", n), n, |b, n| {
             b.iter(|| black_box(bench_delete_linkedvector(linkedvector_item.clone(), n / 2)))
         });
