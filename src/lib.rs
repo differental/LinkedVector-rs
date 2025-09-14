@@ -45,6 +45,10 @@ impl<T> LinkedVector<T> {
         self.length
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.length == 0
+    }
+
     pub fn true_len(&self) -> usize {
         // Length of the underlying vector (maximum length used during lifetime)
         debug_assert_eq!(self.data.len(), self.length + self.freelist.len());
@@ -141,10 +145,10 @@ impl<T> LinkedVector<T> {
     }
 
     pub fn pop_front(&mut self) -> Option<T> {
-        self.length -= 1;
         self.head.map(|oidx| {
             self.head = self.data[oidx].next;
             self.freelist.push(oidx);
+            self.length -= 1;
             self.data[oidx].item.take().unwrap()
         })
     }
@@ -158,9 +162,19 @@ impl<T> LinkedVector<T> {
     // Returns the physical index in data for an index.
     // Panics if out-of-bounds.
     fn physical_index_of(&self, index: usize) -> usize {
+        debug_assert!(index < self.length);
+
         let mut current = self.head.expect("Index out of bounds");
         for _ in 0..index {
-            current = self.data[current].next.expect("Index out of bounds");
+            // index must be within range, so we can skip bounds checking
+            unsafe {
+                debug_assert!(current < self.data.len());
+                current = self
+                    .data
+                    .get_unchecked(current)
+                    .next
+                    .expect("Index out of bounds");
+            }
         }
         current
     }
@@ -187,13 +201,29 @@ impl<T> LinkedVector<T> {
     }
 }
 
+impl<T> Default for LinkedVector<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> Index<usize> for LinkedVector<T> {
     type Output = LinkedNode<T>;
 
     fn index(&self, index: usize) -> &Self::Output {
+        if index >= self.length {
+            panic!("Index out of bounds");
+        }
+
         let mut current = self.head;
         for _ in 0..index {
-            current = self.data[current.expect("Index out of bounds")].next;
+            // index must be within range, so we can skip bounds checking
+            unsafe {
+                current = self
+                    .data
+                    .get_unchecked(current.expect("Index out of bounds"))
+                    .next;
+            }
         }
         &self.data[current.expect("Index out of bounds")]
     }
@@ -201,9 +231,19 @@ impl<T> Index<usize> for LinkedVector<T> {
 
 impl<T> IndexMut<usize> for LinkedVector<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        if index >= self.length {
+            panic!("Index out of bounds");
+        }
+
         let mut current = self.head;
         for _ in 0..index {
-            current = self.data[current.expect("Index out of bounds")].next;
+            // index must be within range, so we can skip bounds checking
+            unsafe {
+                current = self
+                    .data
+                    .get_unchecked(current.expect("Index out of bounds"))
+                    .next;
+            }
         }
         &mut self.data[current.expect("Index out of bounds")]
     }

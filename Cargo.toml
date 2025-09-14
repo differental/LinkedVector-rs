@@ -12,6 +12,11 @@ bench = false
 doc = false
 crate-type = ["lib"]
 
+[profile.bench]
+lto = "fat"
+strip = true
+codegen-units = 1
+
 [[bench]]
 name = "benchmark"
 harness = false

@@ -11,6 +11,7 @@ const N_STRUCTS: [usize; 12] = [
 ];
 const SIZE_STRUCT: usize = 10_000;
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 struct MyStruct {
     nums: [u64; SIZE_STRUCT],
