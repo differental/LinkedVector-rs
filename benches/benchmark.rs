@@ -2,7 +2,7 @@ use criterion::{
     AxisScale, BenchmarkId, Criterion, PlotConfiguration, SamplingMode, criterion_group,
     criterion_main,
 };
-use std::{collections::LinkedList, hint::black_box};
+use std::{collections::LinkedList, hint::black_box, time::Duration};
 
 use linkedvector::LinkedVector;
 
@@ -89,7 +89,8 @@ fn bench_constructions(c: &mut Criterion) {
     let plot_config = PlotConfiguration::default().summary_scale(AxisScale::Logarithmic);
 
     let mut group = c.benchmark_group("Construction");
-    group.sampling_mode(SamplingMode::Flat);
+    group.sampling_mode(SamplingMode::Auto);
+    group.measurement_time(Duration::from_secs(60));
     group.plot_config(plot_config);
 
     let element = MyStruct::new(42);
